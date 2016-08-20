@@ -3,7 +3,7 @@ package io.advantageous.discovery.mesos;
 import io.advantageous.discovery.DiscoveryService;
 import io.advantageous.reakt.promise.Promise;
 import io.advantageous.reakt.promise.Promises;
-import io.vertx.core.json.JsonObject;
+import io.vertx.core.buffer.Buffer;
 import org.junit.Test;
 
 import java.net.URI;
@@ -15,7 +15,7 @@ import static org.junit.Assert.assertNotNull;
 
 public class MarathonDiscoveryServiceTest {
     final MarathonDiscoveryService marathonDiscoveryService = new MarathonDiscoveryService(URI.create("marathon://localhost:8600/"));
-    final JsonObject jsonObject = new JsonObject("{\n" +
+    final Buffer buffer =  Buffer.buffer("{\n" +
             "  \"app\": {\n" +
             "    \"id\": \"/sample-dcos3\",\n" +
             "    \"cmd\": \"/opt/install.sh\",\n" +
@@ -230,7 +230,7 @@ public class MarathonDiscoveryServiceTest {
 
         final Promise<List<URI>> promise = Promises.promiseList(URI.class);
 
-        marathonDiscoveryService.doLookupService(promise, jsonObject,
+        marathonDiscoveryService.doLookupService(promise, buffer,
                 URI.create("marathon:///sample-dcos3?portIndex=0"));
         validateURIs(promise);
     }
@@ -240,7 +240,7 @@ public class MarathonDiscoveryServiceTest {
 
         final Promise<List<URI>> promise = Promises.promiseList(URI.class);
 
-        marathonDiscoveryService.doLookupService(promise, jsonObject,
+        marathonDiscoveryService.doLookupService(promise, buffer,
                 URI.create("marathon:///sample-dcos3?portName=eventbus"));
         validateURIs(promise);
     }
@@ -250,7 +250,7 @@ public class MarathonDiscoveryServiceTest {
 
         final Promise<List<URI>> promise = Promises.promiseList(URI.class);
 
-        marathonDiscoveryService.doLookupService(promise, jsonObject,
+        marathonDiscoveryService.doLookupService(promise, buffer,
                 URI.create("marathon:///sample-dcos3?containerPort=8081"));
         validateURIs(promise);
     }
@@ -260,7 +260,7 @@ public class MarathonDiscoveryServiceTest {
 
         final Promise<List<URI>> promise = Promises.promiseList(URI.class);
 
-        marathonDiscoveryService.doLookupService(promise, jsonObject,
+        marathonDiscoveryService.doLookupService(promise, buffer,
                 URI.create("marathon:///sample-dcos3?what=8081"));
         validateURIs(promise);
     }
@@ -270,7 +270,7 @@ public class MarathonDiscoveryServiceTest {
 
         final Promise<List<URI>> promise = Promises.promiseList(URI.class);
 
-        marathonDiscoveryService.doLookupService(promise, jsonObject,
+        marathonDiscoveryService.doLookupService(promise, buffer,
                 URI.create("what:///sample-dcos3?containerPort=8081"));
         validateURIs(promise);
     }

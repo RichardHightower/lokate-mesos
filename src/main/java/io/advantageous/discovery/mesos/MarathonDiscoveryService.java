@@ -3,6 +3,7 @@ package io.advantageous.discovery.mesos;
 import io.advantageous.discovery.DiscoveryService;
 import io.advantageous.reakt.promise.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -33,6 +34,8 @@ public class MarathonDiscoveryService implements DiscoveryService {
         final URI configURI = URI.create(config.getSchemeSpecificPart());
         this.marathonPort = configURI.getPort();
         this.marathonHost = configURI.getHost();
+
+        logger.info("Marathon discovery configured to {} {}", marathonHost, marathonPort);
     }
 
 
@@ -53,16 +56,34 @@ public class MarathonDiscoveryService implements DiscoveryService {
 
 
             final int queryPort = queryURI.getPort() != -1 ? queryURI.getPort() : this.marathonPort;
-            final String queryHost = queryURI.getHost() == null ? queryURI.getHost() : this.marathonHost;
+            final String queryHost = queryURI.getHost() != null ? queryURI.getHost() : this.marathonHost;
+            final String requestPath = "/v2/apps" + queryURI.getPath();
 
+            if (logger.isDebugEnabled())
+                logger.debug("Marathon discovery looking up service at {} {} {} {}", marathonHost, marathonPort,
+                        requestPath, queryURI);
 
             this.vertx.createHttpClient()
-                    .request(HttpMethod.GET, queryPort, queryHost, "/v2/apps" + queryURI.getPath())
+                    .request(HttpMethod.GET, queryPort, queryHost, requestPath)
                     .exceptionHandler(promise::reject)
                     .handler(httpClientResponse -> httpClientResponse
                             .exceptionHandler(promise::reject)
                             .bodyHandler(buffer -> {
-                                doLookupService(promise, buffer.toJsonObject(), queryURI);
+                                if (httpClientResponse.statusCode() == 200) {
+                                    doLookupService(promise, buffer, queryURI);
+                                } else {
+                                    try {
+                                        final String message = buffer.toJsonObject().getString("message");
+                                        if (message.equals(String.format("App '%s' does not exist", queryURI.getPath()))) {
+                                            promise.resolve(Collections.emptyList());
+                                        } else {
+                                            promise.reject(message);
+                                        }
+                                    } catch (Exception ex) {
+                                        promise.reject("Server rejected request status code "
+                                                + httpClientResponse.statusCode());
+                                    }
+                                }
                             }))
                     .end();
         });
@@ -70,14 +91,14 @@ public class MarathonDiscoveryService implements DiscoveryService {
 
 
     protected void doLookupService(final Promise<List<URI>> promise,
-                                   final JsonObject json,
+                                   final Buffer buffer,
                                    final URI queryURI) {
         try {
 
             if (validateURI(queryURI, promise)) return;
             final Map<String, String> queryMap = splitQuery(queryURI.getQuery());
 
-            final JsonObject app = json.getJsonObject("app");
+            final JsonObject app = buffer.toJsonObject().getJsonObject("app");
             final JsonArray tasks = app.getJsonArray("tasks");
 
             if (queryMap.containsKey("portIndex")) {
@@ -97,12 +118,13 @@ public class MarathonDiscoveryService implements DiscoveryService {
                         containerPort);
                 promise.resolve(extractURIs(tasks, portIndex));
 
-            }
-            else {
+            } else {
                 promise.reject("Did not understand the query params " + queryMap);
             }
         } catch (Exception ex) {
-            promise.reject("Unable to handle response from server", ex);
+            logger.error("Unable to handle response from server {} {} response = {}", queryURI, ex.getMessage(), buffer.toString());
+            logger.error("Exception from not being able to handle response from server ", ex);
+            promise.reject("Unable to handle response from server " + queryURI, ex);
         }
 
     }
@@ -124,8 +146,8 @@ public class MarathonDiscoveryService implements DiscoveryService {
                     if (healthCheckResults.size() == 0) {
                         return true;
                     } else {
-                        return healthCheckResults.stream().map(o->(JsonObject)o)
-                                .allMatch(health-> {
+                        return healthCheckResults.stream().map(o -> (JsonObject) o)
+                                .allMatch(health -> {
                                     if (health.getBoolean("alive") == null) return false;
                                     return health.getBoolean("alive");
                                 });
