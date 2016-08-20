@@ -26,7 +26,7 @@ plugins {
 }
 
 group 'io.advantageous.discovery'
-version '1.0.0'
+version '1.1.0'
 
 sourceCompatibility = '1.8'
 
@@ -43,7 +43,7 @@ dependencies {
     compile 'io.vertx:vertx-core:3.2.1'
     compile 'io.advantageous.reakt:reakt:2.8.17'
     compile 'io.advantageous.reakt:reakt-vertx:2.1.0.RELEASE'
-    compile 'io.advantageous.discovery:lokate:1.1.0'
+    compile 'io.advantageous.discovery:lokate:1.2.0'
 
     testCompile group: 'junit', name: 'junit', version: '4.11'
     testCompile 'ch.qos.logback:logback-core:1.1.3'

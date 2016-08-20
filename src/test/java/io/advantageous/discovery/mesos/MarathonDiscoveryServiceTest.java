@@ -1,5 +1,6 @@
 package io.advantageous.discovery.mesos;
 
+import io.advantageous.discovery.DiscoveryService;
 import io.advantageous.reakt.promise.Promise;
 import io.advantageous.reakt.promise.Promises;
 import io.vertx.core.json.JsonObject;
@@ -215,6 +216,14 @@ public class MarathonDiscoveryServiceTest {
             "    ]\n" +
             "  }\n" +
             "}\n");
+
+
+    @Test
+    public void testCreate() throws Exception {
+
+        final DiscoveryService discoveryService = DiscoveryService.create(URI.create("marathon://marathon.mesos:8080/"));
+
+    }
 
     @Test
     public void doLookupServiceByPortIndex() throws Exception {
