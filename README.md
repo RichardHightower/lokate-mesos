@@ -1,5 +1,5 @@
 # lokate-mesos
-Uses Reakt [Lokate Lib](https://github.com/advantageous/lokate) but adds support for querying Mesos/Marathon location. 
+Uses Reakt [Lokate Lib](https://github.com/advantageous/lokate) but adds support for querying [Mesos/Marathon](https://github.com/advantageous/lokate-mesos/wiki/Design-notes-on-using-the-Marathon-REST-API-to-do-discovery) location. 
 
 
 ## Search by container port
